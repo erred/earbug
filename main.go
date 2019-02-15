@@ -163,6 +163,11 @@ func (c *Client) write(n string, ps []Play) error {
 	w := c.bkt.Object(n).NewWriter(context.Background())
 	err := json.NewEncoder(w).Encode(ps)
 	if err != nil {
+		err2 := w.Close()
+		return fmt.Errorf("encoder: %v, writer: %v", err, err2)
+	}
+	err = w.Close()
+	if err != nil {
 		return fmt.Errorf("writer: %v", err)
 	}
 	return nil
