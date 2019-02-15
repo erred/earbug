@@ -3,7 +3,7 @@ steps:
     args:
       - "build"
       - "-t"
-      - "gcr.io/$PROJECT_ID/cf-dns-update"
+      - "gcr.io/$PROJECT_ID/earbug"
       - "."
 images:
-  - "gcr.io/$PROJECT_ID/cf-dns-update"
+  - "gcr.io/$PROJECT_ID/earbug"
