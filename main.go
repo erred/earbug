@@ -284,7 +284,8 @@ func tokenAuth(tokenFile string) (*Client, error) {
 
 	client := spotify.NewAuthenticator(redirectURL, scopes...).NewClient(&tok)
 	return &Client{
-		spot: &client,
-		bkt:  bkt,
+		spot:  &client,
+		bkt:   bkt,
+		plays: make(map[time.Time]Play),
 	}, nil
 }
