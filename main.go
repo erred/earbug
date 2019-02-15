@@ -104,6 +104,9 @@ func (c *Client) save() {
 	plays := map[string]map[time.Time]Play{}
 	for t, p := range c.plays {
 		d := t.Format("2006-01-02")
+		if plays[d] == nil {
+			plays[d] = map[time.Time]Play{}
+		}
 		plays[d][t] = p
 	}
 
