@@ -6,17 +6,17 @@ steps:
       - -t=gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA
       - -t=gcr.io/$PROJECT_ID/$_IMG:latest
       - .
-  # - id: deploy
-  #   name: gcr.io/cloud-builders/kubectl:latest
-  #   args:
-  #     - set
-  #     - image
-  #     - deploy
-  #     - $_IMG
-  #     - "*=gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA"
-  #   env:
-  #     - CLOUDSDK_COMPUTE_ZONE=$_ZONE
-  #     - CLOUDSDK_CONTAINER_CLUSTER=$_CLUSTER
+  - id: deploy
+    name: gcr.io/cloud-builders/kubectl:latest
+    args:
+      - set
+      - image
+      - deploy
+      - $_IMG
+      - "*=gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA"
+    env:
+      - CLOUDSDK_COMPUTE_ZONE=$_ZONE
+      - CLOUDSDK_CONTAINER_CLUSTER=$_CLUSTER
 images:
   - gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA
   - gcr.io/$PROJECT_ID/$_IMG:latest

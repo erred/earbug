@@ -275,6 +275,7 @@ func genToken(tokenFile string) error {
 // tokenAuth creates a client from a token string
 func tokenAuth(token string) (*Client, error) {
 	tok := oauth2.Token{}
+	log.Println("using token", token)
 	err := json.Unmarshal([]byte(token), &tok)
 	if err != nil {
 		return nil, fmt.Errorf("decode token file: %v", err)
