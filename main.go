@@ -18,7 +18,8 @@ import (
 )
 
 var (
-	Bucket      = "BUCKET"
+	Bucket      = os.Getenv("BUCKET")
+	Token       = os.Getenv("SPOTIFY_TOKEN")
 	redirectURL = "http://localhost:8910/auth"
 	scopes      = []string{
 		spotify.ScopeUserReadRecentlyPlayed,
@@ -46,7 +47,7 @@ func main() {
 		return
 	}
 
-	client, err := tokenAuth(*tokp)
+	client, err := tokenAuth(Token)
 	if err != nil {
 		log.Fatal("get client from token: ", err)
 	}
@@ -271,15 +272,10 @@ func genToken(tokenFile string) error {
 	return nil
 }
 
-// tokenAuth creates a client from a token file
-func tokenAuth(tokenFile string) (*Client, error) {
-	f, err := os.Open(tokenFile)
-	if err != nil {
-		return nil, fmt.Errorf("open token file: %s: %v", tokenFile, err)
-	}
-	defer f.Close()
+// tokenAuth creates a client from a token string
+func tokenAuth(token string) (*Client, error) {
 	tok := oauth2.Token{}
-	err = json.NewDecoder(f).Decode(&tok)
+	err := json.Unmarshal([]byte(token), &tok)
 	if err != nil {
 		return nil, fmt.Errorf("decode token file: %v", err)
 	}
@@ -288,7 +284,7 @@ func tokenAuth(tokenFile string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get bcket client: %v", err)
 	}
-	bkt := cl.Bucket(os.Getenv(Bucket))
+	bkt := cl.Bucket(Bucket)
 
 	client := spotify.NewAuthenticator(redirectURL, scopes...).NewClient(&tok)
 	return &Client{

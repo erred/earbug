@@ -1,15 +1,14 @@
 FROM golang:alpine AS build
 
 WORKDIR /app
-COPY . .
-
 RUN apk add --update --no-cache ca-certificates
-RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o=earbug
+COPY . .
+RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o app
 
 FROM scratch
 
 WORKDIR /app
-COPY --from=build /app/earbug .
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /app/app /bin/
 
-ENTRYPOINT ["/app/earbug"]
+ENTRYPOINT ["/bin/app"]

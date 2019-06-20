@@ -1,9 +1,25 @@
-steps:
-  - name: "gcr.io/cloud-builders/docker"
+  - id: build
+    name: gcr.io/cloud-builders/docker:latest
     args:
-      - "build"
-      - "-t"
-      - "gcr.io/$PROJECT_ID/earbug"
-      - "."
+      - build
+      - -t=gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA
+      - -t=gcr.io/$PROJECT_ID/$_IMG:latest
+      - .
+  # - id: deploy
+  #   name: gcr.io/cloud-builders/kubectl:latest
+  #   args:
+  #     - set
+  #     - image
+  #     - deploy
+  #     - $_IMG
+  #     - "*=gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA"
+  #   env:
+  #     - CLOUDSDK_COMPUTE_ZONE=$_ZONE
+  #     - CLOUDSDK_CONTAINER_CLUSTER=$_CLUSTER
 images:
-  - "gcr.io/$PROJECT_ID/earbug"
+  - gcr.io/$PROJECT_ID/$_IMG:$SHORT_SHA
+  - gcr.io/$PROJECT_ID/$_IMG:latest
+substitutions:
+  _ZONE: us-central1-a
+  _CLUSTER: cluster13
+  _IMG: earbug
