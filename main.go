@@ -18,6 +18,7 @@ import (
 )
 
 var (
+	// SPOTIFY_ID and SPOTIFY_SECRET
 	Bucket      = os.Getenv("BUCKET")
 	Token       = os.Getenv("SPOTIFY_TOKEN")
 	redirectURL = "http://localhost:8910/auth"
