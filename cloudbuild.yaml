@@ -22,5 +22,5 @@ images:
   - gcr.io/$PROJECT_ID/$_IMG:latest
 substitutions:
   _ZONE: us-central1-a
-  _CLUSTER: cluster13
+  _CLUSTER: cluster14
   _IMG: earbug
