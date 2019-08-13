@@ -1,7 +1,7 @@
 module seankhliao.com/earbug
 
 require (
-	cloud.google.com/go v0.44.0
+	cloud.google.com/go v0.44.1
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/zmb3/spotify v0.0.0-20190725171427-5159bf56b13d
