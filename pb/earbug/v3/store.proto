@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package earbug.v3;
+
+import "google/protobuf/duration.proto";
+
+message Store {
+  // cached auth token
+  bytes token = 2;
+  // rfc3339 timestamp : playback
+  map<string, Playback> playbacks = 3;
+  // track id : track
+  map<string, Track> tracks = 4;
+}
+
+message Playback {
+  string track_id = 1;
+  string track_uri = 2;
+  string context_type = 3;
+  string context_uri = 4;
+}
+
+message Track {
+  string id = 1;
+  string uri = 2;
+  string type = 3;
+  string name = 4;
+  google.protobuf.Duration duration = 5;
+  repeated Artist artists = 6;
+}
+
+message Artist {
+  string id = 1;
+  string uri = 2;
+  string name  = 3;
+}
