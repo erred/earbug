@@ -116,7 +116,7 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	if data == nil {
 		data = &userData{}
 		data.initOnce.Do(func() {
-			err = data.init(ctx, s.bkt, user.Value)
+			err = data.init(ctx, s.bkt, user.Value, r.Host, s.spotifyID, s.spotifySecret)
 		})
 	}
 
@@ -174,7 +174,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	statsi, err, _ := s.single.Do(user.User, func() (any, error) {
-		return s.updateUser(ctx, user.User)
+		return s.updateUser(ctx, user.User, r.Host)
 	})
 	if err != nil {
 		s.log.Error(err, "update", "user", user.User)
@@ -198,7 +198,7 @@ type updateStats struct {
 	oldPlays, newPlays   int
 }
 
-func (s *Server) updateUser(ctx context.Context, user string) (updateStats, error) {
+func (s *Server) updateUser(ctx context.Context, user, host string) (updateStats, error) {
 	s.log.V(2).Info("checking for cached user", "user", user)
 	data := func() *userData {
 		s.cacheMu.Lock()
@@ -215,7 +215,7 @@ func (s *Server) updateUser(ctx context.Context, user string) (updateStats, erro
 	var err error
 	data.initOnce.Do(func() {
 		s.log.V(2).Info("running user data init", "user", user)
-		err = data.init(ctx, s.bkt, user)
+		err = data.init(ctx, s.bkt, user, host, s.spotifyID, s.spotifySecret)
 	})
 	if err != nil {
 		return updateStats{}, fmt.Errorf("init %v: %w", user, err)
@@ -249,7 +249,7 @@ type userData struct {
 	client   *spotify.Client
 }
 
-func (u *userData) init(ctx context.Context, bkt *storage.BucketHandle, user string) error {
+func (u *userData) init(ctx context.Context, bkt *storage.BucketHandle, user, host, spotifyID, spotifySecret string) error {
 	u.obj = bkt.Object(user + ".pb.zstd")
 	err := u.read(ctx)
 	if err != nil {
@@ -261,8 +261,16 @@ func (u *userData) init(ctx context.Context, bkt *storage.BucketHandle, user str
 	if err != nil {
 		return fmt.Errorf("unmarshal oauth2 token: %w", err)
 	}
-	ts := oauth2.StaticTokenSource(&token)
-	httpClient := oauth2.NewClient(context.Background(), ts)
+
+	auth := spotifyauth.New(
+		spotifyauth.WithRedirectURL("https://"+host+"/auth/callback"),
+		spotifyauth.WithScopes(
+			spotifyauth.ScopeUserReadRecentlyPlayed,
+		),
+		spotifyauth.WithClientID(spotifyID),
+		spotifyauth.WithClientSecret(spotifySecret),
+	)
+	httpClient := auth.Client(context.Background(), &token)
 	u.client = spotify.New(httpClient, spotify.WithRetry(true))
 	return nil
 }
