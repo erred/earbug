@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/klauspost/compress/zstd"
 	"github.com/zmb3/spotify/v2"
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	earbugv3 "go.seankhliao.com/earbug/v3/pb/earbug/v3"
 	"go.seankhliao.com/svcrunner"
 	"go.seankhliao.com/svcrunner/envflag"
@@ -25,12 +27,16 @@ import (
 )
 
 type Server struct {
-	bucket  string
-	bkt     *storage.BucketHandle
-	single  singleflight.Group
-	cacheMu sync.Mutex
-	cache   map[string]*userData
-	log     logr.Logger
+	spotifyID     string
+	spotifySecret string
+	bucket        string
+	bkt           *storage.BucketHandle
+	single        singleflight.Group
+	cacheMu       sync.Mutex
+	cache         map[string]*userData
+	log           logr.Logger
+	authOnce      sync.Once
+	auth          *spotifyauth.Authenticator
 }
 
 func New(hs *http.Server) *Server {
@@ -39,12 +45,16 @@ func New(hs *http.Server) *Server {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/update", s.update)
+	mux.HandleFunc("/auth/init/", s.authInit)
+	mux.HandleFunc("/auth/callback", s.authCallback)
 	hs.Handler = mux
 	return s
 }
 
 func (s *Server) Register(c *envflag.Config) {
 	c.StringVar(&s.bucket, "earbug.bucket", "", "name of storage bucket")
+	c.StringVar(&s.spotifyID, "earbug.spotify-id", "", "spotify client id")
+	c.StringVar(&s.spotifySecret, "earbug.spotify-secret", "", "spotify client secret")
 }
 
 func (s *Server) Init(ctx context.Context, t svcrunner.Tools) error {
@@ -56,6 +66,88 @@ func (s *Server) Init(ctx context.Context, t svcrunner.Tools) error {
 	s.bkt = client.Bucket(s.bucket)
 	return nil
 }
+
+func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
+	user, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/auth/init/"), "/")
+	http.SetCookie(rw, &http.Cookie{
+		Name:     "earbug_user",
+		Value:    user,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	authURL := spotifyauth.New(
+		spotifyauth.WithRedirectURL("https://"+r.Host+"/auth/callback"),
+		spotifyauth.WithScopes(
+			spotifyauth.ScopeUserReadRecentlyPlayed,
+		),
+		spotifyauth.WithClientID(s.spotifyID),
+		spotifyauth.WithClientSecret(s.spotifySecret),
+	).AuthURL(user)
+	s.log.Info("redirecting auth", "user", user)
+	http.Redirect(rw, r, authURL, http.StatusFound)
+}
+
+func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, err := r.Cookie("earbug_user")
+	if err != nil {
+		s.log.Error(err, "get cookie", "cookie", "earbug_user")
+		http.Error(rw, "get earbug_user cookie", http.StatusBadRequest)
+		return
+	}
+	auth := spotifyauth.New(
+		spotifyauth.WithRedirectURL("https://"+r.Host+"/auth/callback"),
+		spotifyauth.WithScopes(
+			spotifyauth.ScopeUserReadRecentlyPlayed,
+		),
+		spotifyauth.WithClientID(s.spotifyID),
+		spotifyauth.WithClientSecret(s.spotifySecret),
+	)
+	token, err := auth.Token(ctx, user.Value, r)
+	if err != nil {
+		s.log.Error(err, "get token", "user", user.Value)
+		http.Error(rw, "get token", http.StatusNotFound)
+		return
+	}
+
+	s.cacheMu.Lock()
+	data := s.cache[user.Value]
+	s.cacheMu.Unlock()
+	if data == nil {
+		data = &userData{}
+		data.initOnce.Do(func() {
+			err = data.init(ctx, s.bkt, user.Value)
+		})
+	}
+
+	b, err := json.Marshal(token)
+	if err != nil {
+		s.log.Error(err, "marshal token")
+		http.Error(rw, "marshal token", http.StatusInternalServerError)
+		return
+	}
+
+	data.data.Token = b
+	ts := oauth2.StaticTokenSource(token)
+	httpClient := oauth2.NewClient(context.Background(), ts)
+	data.client = spotify.New(httpClient, spotify.WithRetry(true))
+
+	s.cacheMu.Lock()
+	s.cache[user.Value] = data
+	s.cacheMu.Unlock()
+
+	err = data.write(ctx)
+	if err != nil {
+		s.log.Error(err, "write data", "user", user.Value)
+		http.Error(rw, "write data", http.StatusInternalServerError)
+		return
+	}
+
+	s.log.Info("user auth updated", "user", user.Value)
+	rw.WriteHeader(http.StatusOK)
+}
+
+// func (s *Server)
 
 type userReq struct {
 	User string `json:"user"`
@@ -170,7 +262,7 @@ func (u *userData) init(ctx context.Context, bkt *storage.BucketHandle, user str
 		return fmt.Errorf("unmarshal oauth2 token: %w", err)
 	}
 	ts := oauth2.StaticTokenSource(&token)
-	httpClient := oauth2.NewClient(ctx, ts)
+	httpClient := oauth2.NewClient(context.Background(), ts)
 	u.client = spotify.New(httpClient, spotify.WithRetry(true))
 	return nil
 }
