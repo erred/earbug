@@ -144,7 +144,7 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	s.log.Info("user auth updated", "user", user.Value)
-	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte("user auth updated"))
 }
 
 // func (s *Server)
@@ -184,7 +184,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 	stats := statsi.(updateStats)
 	s.log.Info("updated",
-		"user", user,
+		"user", user.User,
 		"dur", time.Since(t),
 		"tracks_new", stats.newTracks-stats.oldTracks,
 		"plays_new", stats.newPlays-stats.oldPlays,
