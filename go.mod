@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/klauspost/compress v1.15.6
 	github.com/zmb3/spotify/v2 v2.2.0
-	go.seankhliao.com/svcrunner v0.1.5
+	go.seankhliao.com/svcrunner v0.1.6
 	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/protobuf v1.28.0
