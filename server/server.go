@@ -183,7 +183,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.WriteHeader(http.StatusOK)
 	stats := statsi.(updateStats)
-	s.log.Info("updated",
+	s.log.Info("listening history updated",
 		"user", user.User,
 		"dur", time.Since(t),
 		"tracks_new", stats.newTracks-stats.oldTracks,
