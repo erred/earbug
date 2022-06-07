@@ -26,6 +26,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
+var cookieName = "earbug_user"
+
 type Server struct {
 	spotifyID     string
 	spotifySecret string
@@ -70,7 +72,7 @@ func (s *Server) Init(ctx context.Context, t svcrunner.Tools) error {
 func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
 	user, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/auth/init/"), "/")
 	http.SetCookie(rw, &http.Cookie{
-		Name:     "earbug_user",
+		Name:     cookieName,
 		Value:    user,
 		Path:     "/",
 		HttpOnly: true,
@@ -83,18 +85,21 @@ func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
 		spotifyauth.WithClientID(s.spotifyID),
 		spotifyauth.WithClientSecret(s.spotifySecret),
 	).AuthURL(user)
-	s.log.Info("redirecting auth", "user", user)
+	s.log.V(1).Info("redirecting auth", "handler", "authInit", "user", user)
 	http.Redirect(rw, r, authURL, http.StatusFound)
 }
 
 func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, err := r.Cookie("earbug_user")
+	log := s.log.WithValues("handler", "authCallback")
+	user, err := r.Cookie(cookieName)
 	if err != nil {
-		s.log.Error(err, "get cookie", "cookie", "earbug_user")
-		http.Error(rw, "get earbug_user cookie", http.StatusBadRequest)
+		http.Error(rw, "get cookie", http.StatusBadRequest)
+		s.log.Error(err, "get cookie", "cookie", cookieName)
 		return
 	}
+
+	log = log.WithValues("user", user)
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL("https://"+r.Host+"/auth/callback"),
 		spotifyauth.WithScopes(
@@ -105,8 +110,8 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	)
 	token, err := auth.Token(ctx, user.Value, r)
 	if err != nil {
-		s.log.Error(err, "get token", "user", user.Value)
 		http.Error(rw, "get token", http.StatusNotFound)
+		log.Error(err, "get token")
 		return
 	}
 
@@ -119,11 +124,16 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 			err = data.init(ctx, s.bkt, user.Value, r.Host, s.spotifyID, s.spotifySecret)
 		})
 	}
+	if err != nil {
+		http.Error(rw, "init data", http.StatusInternalServerError)
+		log.Error(err, "init user data")
+		return
+	}
 
 	b, err := json.Marshal(token)
 	if err != nil {
-		s.log.Error(err, "marshal token")
 		http.Error(rw, "marshal token", http.StatusInternalServerError)
+		s.log.Error(err, "marshal token")
 		return
 	}
 
@@ -138,13 +148,13 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 
 	err = data.write(ctx)
 	if err != nil {
-		s.log.Error(err, "write data", "user", user.Value)
 		http.Error(rw, "write data", http.StatusInternalServerError)
+		s.log.Error(err, "write data")
 		return
 	}
 
-	s.log.Info("user auth updated", "user", user.Value)
 	rw.Write([]byte("user auth updated"))
+	s.log.Info("user auth updated")
 }
 
 // func (s *Server)
@@ -155,35 +165,43 @@ type userReq struct {
 
 func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	log := s.log.WithValues("handler", "update")
 	t := time.Now()
 	if r.Method != http.MethodPost {
 		http.Error(rw, "POST only", http.StatusMethodNotAllowed)
+		log.V(1).Info("invalid method", "method", r.Method)
 		return
 	}
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		s.log.Error(err, "reading request body")
 		http.Error(rw, "read body", http.StatusBadRequest)
+		log.Error(err, "read request body")
 		return
 	}
 	var user userReq
 	err = json.Unmarshal(b, &user)
-	if err != nil || user.User == "" {
-		s.log.Error(err, "unmarshaling body", "user", user.User)
-		http.Error(rw, "unmarshal request", http.StatusBadRequest)
+	if err == nil && user.User == "" {
+		err = errors.New("no user provided")
+	}
+	if err != nil {
+		http.Error(rw, "unmarshal body", http.StatusBadRequest)
+		log.Error(err, "unmarshal body")
 		return
 	}
+
+	log = log.WithValues("user", user.User)
+
 	statsi, err, _ := s.single.Do(user.User, func() (any, error) {
 		return s.updateUser(ctx, user.User, r.Host)
 	})
 	if err != nil {
-		s.log.Error(err, "update", "user", user.User)
-		http.Error(rw, "update error", http.StatusInternalServerError)
+		http.Error(rw, "update uer data", http.StatusInternalServerError)
+		log.Error(err, "update user data")
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
 	stats := statsi.(updateStats)
-	s.log.Info("listening history updated",
+	log.Info("listening history updated",
 		"user", user.User,
 		"dur", time.Since(t),
 		"tracks_new", stats.newTracks-stats.oldTracks,
@@ -199,13 +217,14 @@ type updateStats struct {
 }
 
 func (s *Server) updateUser(ctx context.Context, user, host string) (updateStats, error) {
-	s.log.V(2).Info("checking for cached user", "user", user)
+	log := s.log.WithValues("user", user)
+	log.V(1).Info("checking for cached user", "user", user)
 	data := func() *userData {
 		s.cacheMu.Lock()
 		defer s.cacheMu.Unlock()
 		data, ok := s.cache[user]
 		if !ok {
-			s.log.V(2).Info("creating new user", "user", user)
+			log.V(1).Info("creating new user")
 			data = &userData{}
 			s.cache[user] = data
 		}
@@ -214,14 +233,14 @@ func (s *Server) updateUser(ctx context.Context, user, host string) (updateStats
 
 	var err error
 	data.initOnce.Do(func() {
-		s.log.V(2).Info("running user data init", "user", user)
+		log.V(1).Info("running user data init")
 		err = data.init(ctx, s.bkt, user, host, s.spotifyID, s.spotifySecret)
 	})
 	if err != nil {
 		return updateStats{}, fmt.Errorf("init %v: %w", user, err)
 	}
 
-	s.log.V(2).Info("starting update", "user", user)
+	log.V(1).Info("starting update", "user", user)
 	stats := updateStats{
 		oldTracks: len(data.data.Tracks),
 		oldPlays:  len(data.data.Playbacks),
@@ -233,7 +252,7 @@ func (s *Server) updateUser(ctx context.Context, user, host string) (updateStats
 	stats.newTracks = len(data.data.Tracks)
 	stats.newPlays = len(data.data.Playbacks)
 
-	s.log.V(2).Info("writing to storage")
+	log.V(1).Info("writing to storage")
 	err = data.write(ctx)
 	if err != nil {
 		return updateStats{}, fmt.Errorf("write %v: %w", user, err)
