@@ -72,7 +72,7 @@ func (s *Server) Init(ctx context.Context, t svcrunner.Tools) error {
 
 func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
 	log := s.log.WithName("auth-init")
-	_, span := s.trace.Start(r.Context(), "auth-init")
+	ctx, span := s.trace.Start(r.Context(), "auth-init")
 	defer span.End()
 
 	user, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/auth/init/"), "/")
@@ -92,7 +92,7 @@ func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
 	).AuthURL(user)
 
 	http.Redirect(rw, r, authURL, http.StatusFound)
-	log.V(1).Info("redirecting auth", "user", user)
+	log.V(1).Info("redirecting auth", "user", user, "ctx", ctx, "http_request", r)
 }
 
 func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
@@ -109,7 +109,7 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 			return "get cookie", "", nil, err
 		}
 
-		log = log.WithValues("user", user)
+		log = log.WithValues("user", user, "ctx", ctx)
 		auth := spotifyauth.New(
 			spotifyauth.WithRedirectURL("https://"+r.Host+"/auth/callback"),
 			spotifyauth.WithScopes(
@@ -126,14 +126,14 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	}(r)
 	if err != nil {
 		http.Error(rw, msg, http.StatusBadRequest)
-		log.Error(err, msg)
+		log.Error(err, msg, "ctx", ctx, "http_request", r)
 		return
 	}
 
 	ctx, span = s.trace.Start(ctx, "update-auth")
 	// run until we set our value
 	for shared, ctr := true, 0; shared; ctr++ {
-		log.V(1).Info("updating user auth", "attempt", ctr)
+		log.V(1).Info("updating user auth", "attempt", ctr, "ctx", ctx)
 		func() {
 			ctx, span = s.trace.Start(ctx, "try-update-auth")
 			defer span.End()
@@ -159,13 +159,13 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 		}()
 		if err != nil {
 			http.Error(rw, "update stored data", http.StatusInternalServerError)
-			log.Error(err, "update stored data")
+			log.Error(err, "update stored data", "ctx", ctx, "http_request", r)
 			return
 		}
 	}
 
 	rw.Write([]byte("user auth updated"))
-	s.log.Info("user auth updated")
+	s.log.Info("user auth updated", "ctx", ctx, "http_request", r)
 }
 
 // func (s *Server)
@@ -205,7 +205,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 	}(r)
 	if err != nil {
 		http.Error(rw, msg, http.StatusBadRequest)
-		log.Error(err, msg)
+		log.Error(err, msg, "ctx", ctx, "http_request", r)
 		return
 	}
 
@@ -220,7 +220,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 			ctx, span = s.trace.Start(ctx, "try-update-spotify")
 			defer span.End()
 
-			log.V(1).Info("updating recently played data", "attempt", ctr)
+			log.V(1).Info("updating recently played data", "attempt", ctr, "ctx", ctx)
 			var statsi any
 			statsi, err, _ = s.single.Do(user, func() (any, error) {
 				ctx, span = s.trace.Start(ctx, "update-spotify-singleflight")
@@ -256,7 +256,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 		}()
 		if err != nil {
 			http.Error(rw, "update uer data", http.StatusInternalServerError)
-			log.Error(err, "update user data")
+			log.Error(err, "update user data", "ctx", ctx, "http_request", r)
 			return
 		}
 	}
