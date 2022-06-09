@@ -260,6 +260,7 @@ func newUserData(ctx context.Context, bkt *storage.BucketHandle, user string, ho
 		spotifyauth.WithClientSecret(spotifySecret),
 	)
 	if token == nil {
+		token = new(oauth2.Token)
 		err := json.Unmarshal(u.data.Token, token)
 		if err != nil {
 			return nil, err
