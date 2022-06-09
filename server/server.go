@@ -85,17 +85,19 @@ func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
 		spotifyauth.WithClientID(s.spotifyID),
 		spotifyauth.WithClientSecret(s.spotifySecret),
 	).AuthURL(user)
-	s.log.V(1).Info("redirecting auth", "handler", "authInit", "user", user)
+
 	http.Redirect(rw, r, authURL, http.StatusFound)
+	s.log.V(1).Info("redirecting auth", "handler", "authInit", "user", user)
 }
 
 func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := s.log.WithValues("handler", "authCallback")
+
 	user, err := r.Cookie(cookieName)
 	if err != nil {
 		http.Error(rw, "get cookie", http.StatusBadRequest)
-		s.log.Error(err, "get cookie", "cookie", cookieName)
+		log.Error(err, "get cookie", "cookie", cookieName)
 		return
 	}
 
@@ -111,46 +113,32 @@ func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
 	token, err := auth.Token(ctx, user.Value, r)
 	if err != nil {
 		http.Error(rw, "get token", http.StatusNotFound)
-		log.Error(err, "get token")
+		log.Error(err, "get token for user auth")
 		return
 	}
 
-	s.cacheMu.Lock()
-	data := s.cache[user.Value]
-	s.cacheMu.Unlock()
-	if data == nil {
-		data = &userData{}
-		data.initOnce.Do(func() {
-			err = data.init(ctx, s.bkt, user.Value, r.Host, s.spotifyID, s.spotifySecret)
+	// run until we set our value
+	for shared, ctr := true, 0; shared; ctr++ {
+		log.V(1).Info("updating user auth", "attempt", ctr)
+		_, err, shared = s.single.Do(user.Value, func() (any, error) {
+			log.V(1).Info("getting stored user data")
+			u, err := newUserData(ctx, s.bkt, user.Value, r.Host, s.spotifyID, s.spotifySecret, token)
+			if err != nil {
+				return nil, fmt.Errorf("get updated user data: %w", err)
+			}
+
+			log.V(1).Info("writing to storage")
+			err = u.write(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("write updated user data: %w", err)
+			}
+
+			return nil, nil
 		})
-	}
-	if err != nil {
-		http.Error(rw, "init data", http.StatusInternalServerError)
-		log.Error(err, "init user data")
-		return
-	}
-
-	b, err := json.Marshal(token)
-	if err != nil {
-		http.Error(rw, "marshal token", http.StatusInternalServerError)
-		s.log.Error(err, "marshal token")
-		return
-	}
-
-	data.data.Token = b
-	ts := oauth2.StaticTokenSource(token)
-	httpClient := oauth2.NewClient(context.Background(), ts)
-	data.client = spotify.New(httpClient, spotify.WithRetry(true))
-
-	s.cacheMu.Lock()
-	s.cache[user.Value] = data
-	s.cacheMu.Unlock()
-
-	err = data.write(ctx)
-	if err != nil {
-		http.Error(rw, "write data", http.StatusInternalServerError)
-		s.log.Error(err, "write data")
-		return
+		if err != nil {
+			http.Error(rw, "update stored data", http.StatusInternalServerError)
+			log.Error(err, "update stored data")
+		}
 	}
 
 	rw.Write([]byte("user auth updated"))
@@ -191,16 +179,46 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 
 	log = log.WithValues("user", user.User)
 
-	statsi, err, _ := s.single.Do(user.User, func() (any, error) {
-		return s.updateUser(ctx, user.User, r.Host)
-	})
-	if err != nil {
-		http.Error(rw, "update uer data", http.StatusInternalServerError)
-		log.Error(err, "update user data")
-		return
+	// run until we have a stats update
+	var stats updateStats
+	for ok, ctr := false, 0; !ok; ctr++ {
+		log.V(1).Info("updating recently played data", "attempt", ctr)
+		statsi, err, _ := s.single.Do(user.User, func() (any, error) {
+			log.V(1).Info("getting stored user data")
+			u, err := newUserData(ctx, s.bkt, user.User, r.Host, s.spotifyID, s.spotifySecret, nil)
+			if err != nil {
+				return nil, fmt.Errorf("get user data: %w", err)
+			}
+
+			stats := updateStats{
+				oldTracks: len(u.data.Tracks),
+				oldPlays:  len(u.data.Playbacks),
+			}
+			log.V(1).Info("querying spotify for recently played")
+			err = u.update(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("update %v: %w", user, err)
+			}
+			stats.newTracks = len(u.data.Tracks)
+			stats.newPlays = len(u.data.Playbacks)
+
+			log.V(1).Info("writing to storage")
+			err = u.write(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("write %v: %w", user, err)
+			}
+			return stats, nil
+		})
+		if err != nil {
+			http.Error(rw, "update uer data", http.StatusInternalServerError)
+			log.Error(err, "update user data")
+			return
+		}
+
+		stats, ok = statsi.(updateStats)
 	}
-	rw.WriteHeader(http.StatusOK)
-	stats := statsi.(updateStats)
+
+	rw.Write([]byte("ok"))
 	log.Info("listening history updated",
 		"user", user.User,
 		"dur", time.Since(t),
@@ -216,69 +234,21 @@ type updateStats struct {
 	oldPlays, newPlays   int
 }
 
-func (s *Server) updateUser(ctx context.Context, user, host string) (updateStats, error) {
-	log := s.log.WithValues("user", user)
-	log.V(1).Info("checking for cached user", "user", user)
-	data := func() *userData {
-		s.cacheMu.Lock()
-		defer s.cacheMu.Unlock()
-		data, ok := s.cache[user]
-		if !ok {
-			log.V(1).Info("creating new user")
-			data = &userData{}
-			s.cache[user] = data
-		}
-		return data
-	}()
-
-	var err error
-	data.initOnce.Do(func() {
-		log.V(1).Info("running user data init")
-		err = data.init(ctx, s.bkt, user, host, s.spotifyID, s.spotifySecret)
-	})
-	if err != nil {
-		return updateStats{}, fmt.Errorf("init %v: %w", user, err)
-	}
-
-	log.V(1).Info("starting update", "user", user)
-	stats := updateStats{
-		oldTracks: len(data.data.Tracks),
-		oldPlays:  len(data.data.Playbacks),
-	}
-	err = data.update(ctx)
-	if err != nil {
-		return updateStats{}, fmt.Errorf("update %v: %w", user, err)
-	}
-	stats.newTracks = len(data.data.Tracks)
-	stats.newPlays = len(data.data.Playbacks)
-
-	log.V(1).Info("writing to storage")
-	err = data.write(ctx)
-	if err != nil {
-		return updateStats{}, fmt.Errorf("write %v: %w", user, err)
-	}
-
-	return stats, nil
-}
-
 type userData struct {
-	initOnce sync.Once
-	obj      *storage.ObjectHandle
-	data     earbugv3.Store
-	client   *spotify.Client
+	obj    *storage.ObjectHandle
+	data   earbugv3.Store
+	client *spotify.Client
 }
 
-func (u *userData) init(ctx context.Context, bkt *storage.BucketHandle, user, host, spotifyID, spotifySecret string) error {
-	u.obj = bkt.Object(user + ".pb.zstd")
+// reads the stored object, optionally overriding the stored token
+func newUserData(ctx context.Context, bkt *storage.BucketHandle, user string, host, spotifyID, spotifySecret string, token *oauth2.Token) (*userData, error) {
+	u := &userData{
+		obj: bkt.Object(user + ".pb.zstd"),
+	}
+
 	err := u.read(ctx)
 	if err != nil {
-		return err
-	}
-
-	var token oauth2.Token
-	err = json.Unmarshal(u.data.Token, &token)
-	if err != nil {
-		return fmt.Errorf("unmarshal oauth2 token: %w", err)
+		return nil, err
 	}
 
 	auth := spotifyauth.New(
@@ -289,11 +259,25 @@ func (u *userData) init(ctx context.Context, bkt *storage.BucketHandle, user, ho
 		spotifyauth.WithClientID(spotifyID),
 		spotifyauth.WithClientSecret(spotifySecret),
 	)
-	httpClient := auth.Client(context.Background(), &token)
+	if token == nil {
+		err := json.Unmarshal(u.data.Token, token)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		b, err := json.Marshal(token)
+		if err != nil {
+			return nil, err
+		}
+		u.data.Token = b
+	}
+	httpClient := auth.Client(context.Background(), token)
 	u.client = spotify.New(httpClient, spotify.WithRetry(true))
-	return nil
+
+	return u, nil
 }
 
+// queries spotify for the latest 50 playes tracks and updates the stored data
 func (u *userData) update(ctx context.Context) error {
 	items, err := u.client.PlayerRecentlyPlayedOpt(
 		context.Background(),
@@ -338,6 +322,7 @@ func (u *userData) update(ctx context.Context) error {
 	return err
 }
 
+// reads the object handle into the data field
 func (u *userData) read(ctx context.Context) error {
 	or, err := u.obj.NewReader(ctx)
 	if errors.Is(err, storage.ErrBucketNotExist) {
@@ -365,6 +350,7 @@ func (u *userData) read(ctx context.Context) error {
 	return err
 }
 
+// writes the current user data back to the object handle
 func (u *userData) write(ctx context.Context) error {
 	ow := u.obj.NewWriter(ctx)
 	defer ow.Close()
