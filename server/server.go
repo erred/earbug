@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -17,6 +16,9 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	earbugv3 "go.seankhliao.com/earbug/v3/pb/earbug/v3"
 	"go.seankhliao.com/svcrunner"
 	"go.seankhliao.com/svcrunner/envflag"
@@ -32,19 +34,16 @@ type Server struct {
 	spotifyID     string
 	spotifySecret string
 	bucket        string
-	bkt           *storage.BucketHandle
-	single        singleflight.Group
-	cacheMu       sync.Mutex
-	cache         map[string]*userData
-	log           logr.Logger
-	authOnce      sync.Once
-	auth          *spotifyauth.Authenticator
+
+	bkt    *storage.BucketHandle
+	single singleflight.Group
+
+	log   logr.Logger
+	trace trace.Tracer
 }
 
 func New(hs *http.Server) *Server {
-	s := &Server{
-		cache: make(map[string]*userData),
-	}
+	s := &Server{}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/update", s.update)
 	mux.HandleFunc("/auth/init/", s.authInit)
@@ -61,6 +60,8 @@ func (s *Server) Register(c *envflag.Config) {
 
 func (s *Server) Init(ctx context.Context, t svcrunner.Tools) error {
 	s.log = t.Log.WithName("earbug")
+	s.trace = otel.Tracer("cloudbuild-gchat")
+
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("create storge client: %w", err)
@@ -70,6 +71,10 @@ func (s *Server) Init(ctx context.Context, t svcrunner.Tools) error {
 }
 
 func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
+	log := s.log.WithName("auth-init")
+	_, span := s.trace.Start(r.Context(), "auth-init")
+	defer span.End()
+
 	user, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/auth/init/"), "/")
 	http.SetCookie(rw, &http.Cookie{
 		Name:     cookieName,
@@ -87,57 +92,75 @@ func (s *Server) authInit(rw http.ResponseWriter, r *http.Request) {
 	).AuthURL(user)
 
 	http.Redirect(rw, r, authURL, http.StatusFound)
-	s.log.V(1).Info("redirecting auth", "handler", "authInit", "user", user)
+	log.V(1).Info("redirecting auth", "user", user)
 }
 
 func (s *Server) authCallback(rw http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := s.log.WithValues("handler", "authCallback")
+	log := s.log.WithName("auth-callback")
+	ctx, span := s.trace.Start(r.Context(), "auth-callback")
+	defer span.End()
 
-	user, err := r.Cookie(cookieName)
+	msg, user, token, err := func(r *http.Request) (string, string, *oauth2.Token, error) {
+		ctx, span = s.trace.Start(ctx, "get-token")
+		defer span.End()
+
+		user, err := r.Cookie(cookieName)
+		if err != nil {
+			return "get cookie", "", nil, err
+		}
+
+		log = log.WithValues("user", user)
+		auth := spotifyauth.New(
+			spotifyauth.WithRedirectURL("https://"+r.Host+"/auth/callback"),
+			spotifyauth.WithScopes(
+				spotifyauth.ScopeUserReadRecentlyPlayed,
+			),
+			spotifyauth.WithClientID(s.spotifyID),
+			spotifyauth.WithClientSecret(s.spotifySecret),
+		)
+		token, err := auth.Token(ctx, user.Value, r)
+		if err != nil {
+			return "extract token", "", nil, err
+		}
+		return "", user.Value, token, nil
+	}(r)
 	if err != nil {
-		http.Error(rw, "get cookie", http.StatusBadRequest)
-		log.Error(err, "get cookie", "cookie", cookieName)
+		http.Error(rw, msg, http.StatusBadRequest)
+		log.Error(err, msg)
 		return
 	}
 
-	log = log.WithValues("user", user)
-	auth := spotifyauth.New(
-		spotifyauth.WithRedirectURL("https://"+r.Host+"/auth/callback"),
-		spotifyauth.WithScopes(
-			spotifyauth.ScopeUserReadRecentlyPlayed,
-		),
-		spotifyauth.WithClientID(s.spotifyID),
-		spotifyauth.WithClientSecret(s.spotifySecret),
-	)
-	token, err := auth.Token(ctx, user.Value, r)
-	if err != nil {
-		http.Error(rw, "get token", http.StatusNotFound)
-		log.Error(err, "get token for user auth")
-		return
-	}
-
+	ctx, span = s.trace.Start(ctx, "update-auth")
 	// run until we set our value
 	for shared, ctr := true, 0; shared; ctr++ {
 		log.V(1).Info("updating user auth", "attempt", ctr)
-		_, err, shared = s.single.Do(user.Value, func() (any, error) {
-			log.V(1).Info("getting stored user data")
-			u, err := newUserData(ctx, s.bkt, user.Value, r.Host, s.spotifyID, s.spotifySecret, token)
-			if err != nil {
-				return nil, fmt.Errorf("get updated user data: %w", err)
-			}
+		func() {
+			ctx, span = s.trace.Start(ctx, "try-update-auth")
+			defer span.End()
 
-			log.V(1).Info("writing to storage")
-			err = u.write(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("write updated user data: %w", err)
-			}
+			_, err, shared = s.single.Do(user, func() (any, error) {
+				ctx, span = s.trace.Start(ctx, "update-auth-singleflight")
+				defer span.End()
 
-			return nil, nil
-		})
+				log.V(1).Info("getting stored user data")
+				u, err := newUserData(ctx, s.bkt, user, r.Host, s.spotifyID, s.spotifySecret, token)
+				if err != nil {
+					return nil, fmt.Errorf("get updated user data: %w", err)
+				}
+
+				log.V(1).Info("writing to storage")
+				err = u.write(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("write updated user data: %w", err)
+				}
+
+				return nil, nil
+			})
+		}()
 		if err != nil {
 			http.Error(rw, "update stored data", http.StatusInternalServerError)
 			log.Error(err, "update stored data")
+			return
 		}
 	}
 
@@ -152,75 +175,95 @@ type userReq struct {
 }
 
 func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	log := s.log.WithValues("handler", "update")
+	log := s.log.WithName("update")
+	ctx, span := s.trace.Start(r.Context(), "update")
+	defer span.End()
+
 	t := time.Now()
-	if r.Method != http.MethodPost {
-		http.Error(rw, "POST only", http.StatusMethodNotAllowed)
-		log.V(1).Info("invalid method", "method", r.Method)
-		return
-	}
-	b, err := io.ReadAll(r.Body)
+
+	msg, user, err := func(r *http.Request) (string, string, error) {
+		ctx, span = s.trace.Start(ctx, "extract-user")
+		defer span.End()
+
+		if r.Method != http.MethodPost {
+			return "POST only", "", errors.New("invalid method")
+		}
+
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			return "read request", "", err
+		}
+		var ur userReq
+		err = json.Unmarshal(b, &ur)
+		if err != nil {
+			return "unmarshal request", "", err
+		} else if ur.User == "" {
+			return "no user", "", errors.New("no user provided")
+		}
+
+		return "", ur.User, nil
+	}(r)
 	if err != nil {
-		http.Error(rw, "read body", http.StatusBadRequest)
-		log.Error(err, "read request body")
-		return
-	}
-	var user userReq
-	err = json.Unmarshal(b, &user)
-	if err == nil && user.User == "" {
-		err = errors.New("no user provided")
-	}
-	if err != nil {
-		http.Error(rw, "unmarshal body", http.StatusBadRequest)
-		log.Error(err, "unmarshal body")
+		http.Error(rw, msg, http.StatusBadRequest)
+		log.Error(err, msg)
 		return
 	}
 
-	log = log.WithValues("user", user.User)
+	log = log.WithValues("user", user)
 
+	ctx, span = s.trace.Start(ctx, "update-spotify")
+	defer span.End()
 	// run until we have a stats update
 	var stats updateStats
 	for ok, ctr := false, 0; !ok; ctr++ {
-		log.V(1).Info("updating recently played data", "attempt", ctr)
-		statsi, err, _ := s.single.Do(user.User, func() (any, error) {
-			log.V(1).Info("getting stored user data")
-			u, err := newUserData(ctx, s.bkt, user.User, r.Host, s.spotifyID, s.spotifySecret, nil)
-			if err != nil {
-				return nil, fmt.Errorf("get user data: %w", err)
-			}
+		func() {
+			ctx, span = s.trace.Start(ctx, "try-update-spotify")
+			defer span.End()
 
-			stats := updateStats{
-				oldTracks: len(u.data.Tracks),
-				oldPlays:  len(u.data.Playbacks),
-			}
-			log.V(1).Info("querying spotify for recently played")
-			err = u.update(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("update %v: %w", user, err)
-			}
-			stats.newTracks = len(u.data.Tracks)
-			stats.newPlays = len(u.data.Playbacks)
+			log.V(1).Info("updating recently played data", "attempt", ctr)
+			var statsi any
+			statsi, err, _ = s.single.Do(user, func() (any, error) {
+				ctx, span = s.trace.Start(ctx, "update-spotify-singleflight")
+				defer span.End()
 
-			log.V(1).Info("writing to storage")
-			err = u.write(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("write %v: %w", user, err)
-			}
-			return stats, nil
-		})
+				log.V(1).Info("getting stored user data")
+				u, err := newUserData(ctx, s.bkt, user, r.Host, s.spotifyID, s.spotifySecret, nil)
+				if err != nil {
+					return nil, fmt.Errorf("get user data: %w", err)
+				}
+
+				stats := updateStats{
+					oldTracks: len(u.data.Tracks),
+					oldPlays:  len(u.data.Playbacks),
+				}
+				log.V(1).Info("querying spotify for recently played")
+				err = u.update(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("update %v: %w", user, err)
+				}
+				stats.newTracks = len(u.data.Tracks)
+				stats.newPlays = len(u.data.Playbacks)
+
+				log.V(1).Info("writing to storage")
+				err = u.write(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("write %v: %w", user, err)
+				}
+				return stats, nil
+			})
+
+			stats, ok = statsi.(updateStats)
+		}()
 		if err != nil {
 			http.Error(rw, "update uer data", http.StatusInternalServerError)
 			log.Error(err, "update user data")
 			return
 		}
-
-		stats, ok = statsi.(updateStats)
 	}
 
 	rw.Write([]byte("ok"))
 	log.Info("listening history updated",
-		"user", user.User,
+		"user", user,
 		"dur", time.Since(t),
 		"tracks_new", stats.newTracks-stats.oldTracks,
 		"plays_new", stats.newPlays-stats.oldPlays,
@@ -242,6 +285,9 @@ type userData struct {
 
 // reads the stored object, optionally overriding the stored token
 func newUserData(ctx context.Context, bkt *storage.BucketHandle, user string, host, spotifyID, spotifySecret string, token *oauth2.Token) (*userData, error) {
+	ctx, span := otel.Tracer("earbug-userdata").Start(ctx, "newUserData")
+	defer span.End()
+
 	u := &userData{
 		obj: bkt.Object(user + ".pb.zstd"),
 	}
@@ -272,7 +318,13 @@ func newUserData(ctx context.Context, bkt *storage.BucketHandle, user string, ho
 		}
 		u.data.Token = b
 	}
-	httpClient := auth.Client(context.Background(), token)
+
+	authCtx := context.WithValue(ctx, oauth2.HTTPClient, &http.Client{
+		Transport: otelhttp.NewTransport(nil),
+	})
+
+	httpClient := auth.Client(authCtx, token)
+	httpClient.Transport = otelhttp.NewTransport(httpClient.Transport)
 	u.client = spotify.New(httpClient, spotify.WithRetry(true))
 
 	return u, nil
@@ -280,8 +332,11 @@ func newUserData(ctx context.Context, bkt *storage.BucketHandle, user string, ho
 
 // queries spotify for the latest 50 playes tracks and updates the stored data
 func (u *userData) update(ctx context.Context) error {
+	ctx, span := otel.Tracer("earbug-userdata").Start(ctx, "update")
+	defer span.End()
+
 	items, err := u.client.PlayerRecentlyPlayedOpt(
-		context.Background(),
+		ctx,
 		&spotify.RecentlyPlayedOptions{
 			Limit: 50, // Max
 		},
@@ -325,6 +380,9 @@ func (u *userData) update(ctx context.Context) error {
 
 // reads the object handle into the data field
 func (u *userData) read(ctx context.Context) error {
+	ctx, span := otel.Tracer("earbug-userdata").Start(ctx, "read")
+	defer span.End()
+
 	or, err := u.obj.NewReader(ctx)
 	if errors.Is(err, storage.ErrBucketNotExist) {
 		return errors.New("new user setup not implemented")
@@ -353,6 +411,9 @@ func (u *userData) read(ctx context.Context) error {
 
 // writes the current user data back to the object handle
 func (u *userData) write(ctx context.Context) error {
+	ctx, span := otel.Tracer("earbug-userdata").Start(ctx, "write")
+	defer span.End()
+
 	ow := u.obj.NewWriter(ctx)
 	defer ow.Close()
 
