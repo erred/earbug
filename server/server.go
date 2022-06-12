@@ -181,8 +181,8 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 
 	t := time.Now()
 
-	msg, user, err := func(r *http.Request) (string, string, error) {
-		ctx, span = s.trace.Start(ctx, "extract-user")
+	msg, user, err := func(ctx context.Context, r *http.Request) (string, string, error) {
+		_, span := s.trace.Start(ctx, "extract-user")
 		defer span.End()
 
 		if r.Method != http.MethodPost {
@@ -202,7 +202,7 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 		}
 
 		return "", ur.User, nil
-	}(r)
+	}(ctx, r)
 	if err != nil {
 		http.Error(rw, msg, http.StatusBadRequest)
 		log.Error(err, msg, "ctx", ctx, "http_request", r)
@@ -217,13 +217,13 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 	var stats updateStats
 	for ok, ctr := false, 0; !ok; ctr++ {
 		func() {
-			ctx, span = s.trace.Start(ctx, "try-update-spotify")
+			ctx, span := s.trace.Start(ctx, "try-update-spotify")
 			defer span.End()
 
 			log.V(1).Info("updating recently played data", "attempt", ctr, "ctx", ctx)
 			var statsi any
 			statsi, err, _ = s.single.Do(user, func() (any, error) {
-				ctx, span = s.trace.Start(ctx, "update-spotify-singleflight")
+				ctx, span := s.trace.Start(ctx, "update-spotify-singleflight")
 				defer span.End()
 
 				log.V(1).Info("getting stored user data")
@@ -263,7 +263,6 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 
 	rw.Write([]byte("ok"))
 	log.Info("listening history updated",
-		"user", user,
 		"dur", time.Since(t),
 		"tracks_new", stats.newTracks-stats.oldTracks,
 		"plays_new", stats.newPlays-stats.oldPlays,
@@ -271,7 +270,6 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 		"plays_all", stats.newPlays,
 		"ctx", ctx,
 		"http_request", r,
-		"debug_xctc", r.Header.Get("x-cloud-trace-context"),
 	)
 }
 
