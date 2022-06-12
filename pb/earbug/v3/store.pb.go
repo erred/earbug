@@ -7,11 +7,12 @@
 package earbugv3
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -383,16 +384,18 @@ func file_earbug_v3_store_proto_rawDescGZIP() []byte {
 	return file_earbug_v3_store_proto_rawDescData
 }
 
-var file_earbug_v3_store_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_earbug_v3_store_proto_goTypes = []interface{}{
-	(*Store)(nil),               // 0: earbug.v3.Store
-	(*Playback)(nil),            // 1: earbug.v3.Playback
-	(*Track)(nil),               // 2: earbug.v3.Track
-	(*Artist)(nil),              // 3: earbug.v3.Artist
-	nil,                         // 4: earbug.v3.Store.PlaybacksEntry
-	nil,                         // 5: earbug.v3.Store.TracksEntry
-	(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
-}
+var (
+	file_earbug_v3_store_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+	file_earbug_v3_store_proto_goTypes  = []interface{}{
+		(*Store)(nil),               // 0: earbug.v3.Store
+		(*Playback)(nil),            // 1: earbug.v3.Playback
+		(*Track)(nil),               // 2: earbug.v3.Track
+		(*Artist)(nil),              // 3: earbug.v3.Artist
+		nil,                         // 4: earbug.v3.Store.PlaybacksEntry
+		nil,                         // 5: earbug.v3.Store.TracksEntry
+		(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
+	}
+)
 var file_earbug_v3_store_proto_depIdxs = []int32{
 	4, // 0: earbug.v3.Store.playbacks:type_name -> earbug.v3.Store.PlaybacksEntry
 	5, // 1: earbug.v3.Store.tracks:type_name -> earbug.v3.Store.TracksEntry
