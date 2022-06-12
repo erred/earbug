@@ -269,6 +269,9 @@ func (s *Server) update(rw http.ResponseWriter, r *http.Request) {
 		"plays_new", stats.newPlays-stats.oldPlays,
 		"tracks_all", stats.newTracks,
 		"plays_all", stats.newPlays,
+		"ctx", ctx,
+		"http_request", r,
+		"debug_xctc", r.Header.Get("x-cloud-trace-context"),
 	)
 }
 
