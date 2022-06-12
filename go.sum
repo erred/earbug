@@ -253,8 +253,8 @@ go.opentelemetry.io/otel/trace v1.7.0/go.mod h1:fzLSB9nqR2eXzxPXb2JW9IKE+ScyXA48
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
 go.seankhliao.com/gchat v0.0.0-20220606145341-27700a74582c h1:X/0KrX41YpofGDUB/px99oJsPuJZ+HYdfTIGbcyB2+U=
 go.seankhliao.com/gchat v0.0.0-20220606145341-27700a74582c/go.mod h1:wtQXcAF9rzTjUwuqHC1R/B+ytI+W8ztkeaKmSUxu/wE=
-go.seankhliao.com/svcrunner v0.2.2 h1:zmp50fwmhI6R1KcKVmd5fHrbLSuAToeZ5D3350iujuU=
-go.seankhliao.com/svcrunner v0.2.2/go.mod h1:VfktENBf/znffgHbXsvfW/ycmwBUAIqVHVYEPDWi/LE=
+go.seankhliao.com/svcrunner v0.2.3 h1:FPh7VN4nojKS76oReHqFo7BXlPdxArg4wp+cN2jQUnQ=
+go.seankhliao.com/svcrunner v0.2.3/go.mod h1:VfktENBf/znffgHbXsvfW/ycmwBUAIqVHVYEPDWi/LE=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.9.0 h1:ECmE8Bn/WFTYwEW/bpKD3M8VtR/zQVbavAoalC1PYyE=
 go.uber.org/atomic v1.9.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
