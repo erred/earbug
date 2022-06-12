@@ -10,7 +10,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/trace v1.7.0
-	go.seankhliao.com/svcrunner v0.2.3
+	go.seankhliao.com/svcrunner v0.2.4
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/protobuf v1.28.0
@@ -36,7 +36,7 @@ require (
 	go.opentelemetry.io/contrib/detectors/gcp v1.7.0 // indirect
 	go.opentelemetry.io/otel/metric v0.30.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
-	go.seankhliao.com/gchat v0.0.0-20220606145341-27700a74582c // indirect
+	go.seankhliao.com/gchat v0.0.0-20220612154931-8f1077ccd269 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect

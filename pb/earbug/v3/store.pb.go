@@ -396,6 +396,7 @@ var (
 		(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
 	}
 )
+
 var file_earbug_v3_store_proto_depIdxs = []int32{
 	4, // 0: earbug.v3.Store.playbacks:type_name -> earbug.v3.Store.PlaybacksEntry
 	5, // 1: earbug.v3.Store.tracks:type_name -> earbug.v3.Store.TracksEntry

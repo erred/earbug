@@ -251,10 +251,10 @@ go.opentelemetry.io/otel/sdk v1.7.0/go.mod h1:uTEOTwaqIVuTGiJN7ii13Ibp75wJmYUDe3
 go.opentelemetry.io/otel/trace v1.7.0 h1:O37Iogk1lEkMRXewVtZ1BBTVn5JEp8GrJvP92bJqC6o=
 go.opentelemetry.io/otel/trace v1.7.0/go.mod h1:fzLSB9nqR2eXzxPXb2JW9IKE+ScyXA48yyE4TNvoHqU=
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
-go.seankhliao.com/gchat v0.0.0-20220606145341-27700a74582c h1:X/0KrX41YpofGDUB/px99oJsPuJZ+HYdfTIGbcyB2+U=
-go.seankhliao.com/gchat v0.0.0-20220606145341-27700a74582c/go.mod h1:wtQXcAF9rzTjUwuqHC1R/B+ytI+W8ztkeaKmSUxu/wE=
-go.seankhliao.com/svcrunner v0.2.3 h1:FPh7VN4nojKS76oReHqFo7BXlPdxArg4wp+cN2jQUnQ=
-go.seankhliao.com/svcrunner v0.2.3/go.mod h1:VfktENBf/znffgHbXsvfW/ycmwBUAIqVHVYEPDWi/LE=
+go.seankhliao.com/gchat v0.0.0-20220612154931-8f1077ccd269 h1:h9gJquY9YFRVXKCLXSyJu8pgYSN2AbDjrBu9CEjBol8=
+go.seankhliao.com/gchat v0.0.0-20220612154931-8f1077ccd269/go.mod h1:wtQXcAF9rzTjUwuqHC1R/B+ytI+W8ztkeaKmSUxu/wE=
+go.seankhliao.com/svcrunner v0.2.4 h1:S0Zd2LSMC+jN3Q94sopLKgcCjB6shb4SQ4+ZOZfLwaE=
+go.seankhliao.com/svcrunner v0.2.4/go.mod h1:FMwi7w70hByQpJFTEdOHlC42KJV4oTVrqw9emd2rJKI=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.9.0 h1:ECmE8Bn/WFTYwEW/bpKD3M8VtR/zQVbavAoalC1PYyE=
 go.uber.org/atomic v1.9.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
