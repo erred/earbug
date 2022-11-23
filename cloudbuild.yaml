@@ -13,7 +13,6 @@ steps:
       - |
         set -ex \
         && go test -vet=all ./... \
-        && staticcheck ./... \
         && ko build -B --platform=linux/amd64 --image-refs=.image.txt . \
         && chmod +r .image.txt
 
