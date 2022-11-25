@@ -255,6 +255,8 @@ go.seankhliao.com/gchat v0.0.0-20220612154931-8f1077ccd269 h1:h9gJquY9YFRVXKCLXS
 go.seankhliao.com/gchat v0.0.0-20220612154931-8f1077ccd269/go.mod h1:wtQXcAF9rzTjUwuqHC1R/B+ytI+W8ztkeaKmSUxu/wE=
 go.seankhliao.com/svcrunner v0.4.8 h1:sCs2SdxSh8pUUORaLWciexhBCHWCEfOye2CaXhyYsSA=
 go.seankhliao.com/svcrunner v0.4.8/go.mod h1:awvQ/vs2Ats1eGezq+Cfu8q8Jp82ZxehsJ+r8Om6HWg=
+go.seankhliao.com/svcrunner v0.4.9 h1:1HTRS+dzl2QfdqQ+THz1OFcE9YjQ7K9JXU9sGbaIjEk=
+go.seankhliao.com/svcrunner v0.4.9/go.mod h1:awvQ/vs2Ats1eGezq+Cfu8q8Jp82ZxehsJ+r8Om6HWg=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.10.0 h1:9qC72Qh0+3MqyJbAn8YU5xVq1frD8bn3JtD2oXtafVQ=
 go.uber.org/atomic v1.10.0/go.mod h1:LUxbIzbOniOlMKjJjyPfpl4v+PKK2cNJn91OQbhoJI0=
