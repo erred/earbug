@@ -1,12 +1,10 @@
 steps:
-  - id: build-push-deploy
-    name: "us-central1-docker.pkg.dev/com-seankhliao/build/gotip"
-    entrypoint: "sh"
+  - name: "us-central1-docker.pkg.dev/com-seankhliao/build/gotip:latest"
+    entrypoint: sh
     env:
-      - "GGCR_EXPERIMENT_ESTARGZ=1"
+      - CGO_ENABLED=0
     args:
-      - "-c"
+      - -c
       - |
-        set -ex \
-        && go test -vet=all ./... && \
-        skaffold run
+        go test -vet=all ./... && \
+        go build ./...
