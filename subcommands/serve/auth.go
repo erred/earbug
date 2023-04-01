@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/bufbuild/connect-go"
@@ -15,11 +16,14 @@ import (
 )
 
 func (s *Server) Authorize(ctx context.Context, r *connect.Request[earbugv4.AuthorizeRequest]) (*connect.Response[earbugv4.AuthorizeResponse], error) {
+	_, span := s.o.T.Start(ctx, "Authorize")
+	defer span.End()
+
 	clientID, clientSecret := func() (clientID, clientSecret string) {
 		s.storemu.Lock()
 		defer s.storemu.Unlock()
 		clientID = r.Msg.ClientId
-		if clientID == "" {
+		if clientID == "" && (s.store.Auth != nil && s.store.Auth.ClientId != "") {
 			clientID = s.store.Auth.ClientId
 		} else {
 			if s.store.Auth == nil {
@@ -28,13 +32,16 @@ func (s *Server) Authorize(ctx context.Context, r *connect.Request[earbugv4.Auth
 			s.store.Auth.ClientId = clientID
 		}
 		clientSecret = r.Msg.ClientSecret
-		if clientSecret == "" {
+		if clientSecret == "" && (s.store.Auth != nil && s.store.Auth.ClientSecret != "") {
 			clientSecret = s.store.Auth.ClientSecret
 		} else {
 			s.store.Auth.ClientSecret = clientSecret
 		}
 		return
 	}()
+	if clientID == "" || clientSecret == "" {
+		return nil, fmt.Errorf("missing client id/secret")
+	}
 
 	as := NewAuthState(clientID, clientSecret, s.authURL)
 	s.authState.Store(as)
@@ -47,7 +54,8 @@ func (s *Server) Authorize(ctx context.Context, r *connect.Request[earbugv4.Auth
 }
 
 func (s *Server) hAuthCallback(rw http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, span := s.o.T.Start(r.Context(), "hAuthCallback")
+	defer span.End()
 
 	as := s.authState.Load()
 	token, err := as.auth.Token(ctx, as.state, r)

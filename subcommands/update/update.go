@@ -63,6 +63,9 @@ func (c *Cmd) Execute(ctx context.Context, f *flag.FlagSet, args ...any) subcomm
 }
 
 func (c *Cmd) update(ctx context.Context, o *observability.O, e earbugv4connect.EarbugServiceClient) error {
+	ctx, span := o.T.Start(ctx, "update")
+	defer span.End()
+
 	_, err := e.UpdateRecentlyPlayed(ctx, &connect.Request[earbugv4.UpdateRecentlyPlayedRequest]{})
 	if err != nil {
 		o.L.LogAttrs(ctx, slog.LevelError, "send update request", slog.String("error", err.Error()))

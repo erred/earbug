@@ -11,6 +11,9 @@ import (
 )
 
 func (s *Server) ReportPlayed(ctx context.Context, r *connect.Request[earbugv4.ReportPlayedRequest]) (*connect.Response[earbugv4.ReportPlayedResponse], error) {
+	_, span := s.o.T.Start(ctx, "ReportPlayed")
+	defer span.End()
+
 	since := r.Msg.Since.AsTime().Format(time.RFC3339)
 	var plays []*earbugv4.ReportPlayedResponse_Playback
 

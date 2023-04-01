@@ -44,6 +44,9 @@ func (c *Cmd) Execute(ctx context.Context, f *flag.FlagSet, args ...any) subcomm
 	o := observability.New(c.o)
 	e := client.New(c.c)
 
+	ctx, span := o.T.Start(ctx, "auth")
+	defer span.End()
+
 	res, err := e.Authorize(ctx, &connect.Request[earbugv4.AuthorizeRequest]{
 		Msg: &earbugv4.AuthorizeRequest{
 			ClientId:     c.clientID,

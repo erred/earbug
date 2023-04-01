@@ -69,6 +69,9 @@ func (c *Cmd) Execute(ctx context.Context, f *flag.FlagSet, args ...any) subcomm
 }
 
 func (c *Cmd) export(ctx context.Context, o *observability.O, e earbugv4connect.EarbugServiceClient) error {
+	ctx, span := o.T.Start(ctx, "export")
+	defer span.End()
+
 	er := &earbugv4.ExportRequest{}
 	if c.bucket != "local" {
 		er.Bucket = c.bucket

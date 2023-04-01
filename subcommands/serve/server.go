@@ -16,6 +16,8 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/zmb3/spotify/v2"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.seankhliao.com/earbug/v4/observability"
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
 	"go.seankhliao.com/proto/earbug/v4/earbugv4connect"
@@ -80,6 +82,9 @@ func New(ctx context.Context, c *Cmd) *Server {
 }
 
 func (s *Server) initData(ctx context.Context, bucket, key string) error {
+	ctx, span := s.o.T.Start(ctx, "initData")
+	defer span.End()
+
 	if bucket != "" && key != "" {
 		bkt, err := blob.OpenBucket(ctx, bucket)
 		if err != nil {
@@ -183,5 +188,9 @@ func (o *O) markErr(ctx context.Context, msg string, err error) error {
 
 func (o *O) httpError(ctx context.Context, msg string, err error, rw http.ResponseWriter, code int) {
 	err = o.markErr(ctx, msg, err)
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, msg)
+	}
 	http.Error(rw, err.Error(), code)
 }

@@ -8,6 +8,13 @@ require (
 	github.com/klauspost/compress v1.16.3
 	github.com/zmb3/spotify/v2 v2.3.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.0-rc.2
+	go.opentelemetry.io/otel v1.15.0-rc.2
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.38.0-rc.2
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.15.0-rc.2
+	go.opentelemetry.io/otel/metric v1.15.0-rc.2
+	go.opentelemetry.io/otel/sdk v1.15.0-rc.2
+	go.opentelemetry.io/otel/sdk/metric v0.38.0-rc.2
+	go.opentelemetry.io/otel/trace v1.15.0-rc.2
 	go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381
 	gocloud.dev v0.29.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
@@ -39,6 +46,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.3 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
@@ -54,6 +62,7 @@ require (
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3 // indirect
 	github.com/hdevalence/ed25519consensus v0.0.0-20220222234857-c00d1f31bab3 // indirect
 	github.com/illarion/gonotify v1.0.1 // indirect
 	github.com/insomniacslk/dhcp v0.0.0-20221215072855-de60144f33f8 // indirect
@@ -78,9 +87,10 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/metric v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/trace v1.15.0-rc.2 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.15.0-rc.2 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.38.0-rc.2 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.15.0-rc.2 // indirect
+	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go4.org/mem v0.0.0-20210711025021-927187094b94 // indirect
 	go4.org/netipx v0.0.0-20220725152314-7e7bdc8411bf // indirect
 	golang.org/x/crypto v0.6.0 // indirect

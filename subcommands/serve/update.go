@@ -11,6 +11,9 @@ import (
 )
 
 func (s *Server) UpdateRecentlyPlayed(ctx context.Context, r *connect.Request[earbugv4.UpdateRecentlyPlayedRequest]) (*connect.Response[earbugv4.UpdateRecentlyPlayedResponse], error) {
+	_, span := s.o.T.Start(ctx, "UpdateRecentlyPlayed")
+	defer span.End()
+
 	items, err := s.spot.PlayerRecentlyPlayedOpt(ctx, &spotify.RecentlyPlayedOptions{Limit: 50})
 	if err != nil {
 		return nil, s.o.markErr(ctx, "get recently played", err)

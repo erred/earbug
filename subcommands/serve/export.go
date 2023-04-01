@@ -13,6 +13,9 @@ import (
 )
 
 func (s *Server) Export(ctx context.Context, r *connect.Request[earbugv4.ExportRequest]) (*connect.Response[earbugv4.ExportResponse], error) {
+	ctx, span := s.o.T.Start(ctx, "Export")
+	defer span.End()
+
 	s.storemu.Lock()
 	b, err := proto.Marshal(&s.store)
 	s.storemu.Unlock()
