@@ -1993,6 +1993,8 @@ go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381 h1:Wsy8jkJW42E9P2FiCH
 go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381/go.mod h1:hIP4cZ4M25jP1pezFIN/EQINQljVHLI/LQrcc24lw0M=
 go.seankhliao.com/svcrunner/v2 v2.0.0-20230407110057-b68cf9dcd273 h1:YOTMJhiNYVtuC7eo0PMSSEbySCKgGQT2BvoF/MzT3j4=
 go.seankhliao.com/svcrunner/v2 v2.0.0-20230407110057-b68cf9dcd273/go.mod h1:0Q8wklZHfb3hl6hrHCURhRSbZQEOyNWZSqwZGaE2t4c=
+go.seankhliao.com/svcrunner/v2 v2.0.0-20230407162322-6e0da475b253 h1:dhieZHfKXl3713cOFR6TGGjbwX16wVAFHR+d4MIbsXA=
+go.seankhliao.com/svcrunner/v2 v2.0.0-20230407162322-6e0da475b253/go.mod h1:0Q8wklZHfb3hl6hrHCURhRSbZQEOyNWZSqwZGaE2t4c=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=

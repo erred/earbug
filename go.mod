@@ -1,6 +1,6 @@
 module go.seankhliao.com/earbug/v4
 
-go 1.19
+go 1.20
 
 require (
 	github.com/bufbuild/connect-go v1.5.2
@@ -9,7 +9,7 @@ require (
 	github.com/zmb3/spotify/v2 v2.3.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.0-rc.2
 	go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381
-	go.seankhliao.com/svcrunner/v2 v2.0.0-20230407110057-b68cf9dcd273
+	go.seankhliao.com/svcrunner/v2 v2.0.0-20230407162322-6e0da475b253
 	gocloud.dev v0.29.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/oauth2 v0.6.0

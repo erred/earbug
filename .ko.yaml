@@ -1,0 +1,10 @@
+builds:
+  - id: main
+    dir: .
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
