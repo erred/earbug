@@ -9,8 +9,8 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/google/subcommands"
 	"go.seankhliao.com/earbug/v4/client"
-	"go.seankhliao.com/earbug/v4/observability"
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
+	"go.seankhliao.com/svcrunner/v2/observability"
 	"golang.org/x/exp/slog"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

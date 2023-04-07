@@ -10,9 +10,10 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/zmb3/spotify/v2"
-	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
+	"golang.org/x/oauth2"
+	oauthspotify "golang.org/x/oauth2/spotify"
 )
 
 func (s *Server) Authorize(ctx context.Context, r *connect.Request[earbugv4.AuthorizeRequest]) (*connect.Response[earbugv4.AuthorizeResponse], error) {
@@ -48,7 +49,7 @@ func (s *Server) Authorize(ctx context.Context, r *connect.Request[earbugv4.Auth
 
 	return &connect.Response[earbugv4.AuthorizeResponse]{
 		Msg: &earbugv4.AuthorizeResponse{
-			AuthUrl: as.auth.AuthURL(as.state),
+			AuthUrl: as.conf.AuthCodeURL(as.state),
 		},
 	}, nil
 }
@@ -58,19 +59,20 @@ func (s *Server) hAuthCallback(rw http.ResponseWriter, r *http.Request) {
 	defer span.End()
 
 	as := s.authState.Load()
-	token, err := as.auth.Token(ctx, as.state, r)
+	token, err := as.conf.Exchange(ctx, r.FormValue("code"))
 	if err != nil {
-		s.o.httpError(ctx, "get token from request", err, rw, http.StatusBadRequest)
+		s.o.HTTPErr(ctx, "get token from request", err, rw, http.StatusBadRequest)
 		return
 	}
 
-	httpClient := as.auth.Client(ctx, token)
-	httpClient.Transport = otelhttp.NewTransport(httpClient.Transport)
+	httpClient := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
+	httpClient = as.conf.Client(ctx, token)
 	spotClient := spotify.New(httpClient)
 
 	tokenMarshaled, err := json.Marshal(token)
 	if err != nil {
-		s.o.httpError(ctx, "marshal token", err, rw, http.StatusBadRequest)
+		s.o.HTTPErr(ctx, "marshal token", err, rw, http.StatusBadRequest)
 		return
 	}
 
@@ -86,7 +88,7 @@ func (s *Server) hAuthCallback(rw http.ResponseWriter, r *http.Request) {
 
 type AuthState struct {
 	state string
-	auth  *spotifyauth.Authenticator
+	conf  *oauth2.Config
 }
 
 func NewAuthState(clientID, clientSecret, redirectURL string) *AuthState {
@@ -94,13 +96,16 @@ func NewAuthState(clientID, clientSecret, redirectURL string) *AuthState {
 	rand.Read(buf)
 	return &AuthState{
 		state: base64.StdEncoding.EncodeToString(buf),
-		auth: spotifyauth.New(
-			spotifyauth.WithClientID(clientID),
-			spotifyauth.WithClientSecret(clientSecret),
-			spotifyauth.WithScopes(
-				spotifyauth.ScopeUserReadRecentlyPlayed,
-			),
-			spotifyauth.WithRedirectURL(redirectURL),
-		),
+		conf: &oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:   oauthspotify.Endpoint.AuthURL,
+				TokenURL:  oauthspotify.Endpoint.TokenURL,
+				AuthStyle: oauth2.AuthStyleInHeader,
+			},
+			RedirectURL: redirectURL,
+			Scopes:      []string{"user-read-recently-played"},
+		},
 	}
 }

@@ -3,40 +3,31 @@ package serve
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
-	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/zmb3/spotify/v2"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
-	"go.seankhliao.com/earbug/v4/observability"
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
 	"go.seankhliao.com/proto/earbug/v4/earbugv4connect"
+	"go.seankhliao.com/svcrunner/v2/observability"
+	"go.seankhliao.com/svcrunner/v2/tshttp"
 	"gocloud.dev/blob"
 	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/proto"
-	"tailscale.com/tsnet"
 
 	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/gcsblob"
-	oauthspotify "golang.org/x/oauth2/spotify"
 )
 
 type Server struct {
-	o O
+	o *observability.O
 
-	http *http.Server
-	ts   *tsnet.Server
+	svr  *tshttp.Server
 	spot *spotify.Client
 
 	storemu sync.Mutex
@@ -49,32 +40,16 @@ type Server struct {
 }
 
 func New(ctx context.Context, c *Cmd) *Server {
-	o := O{observability.New(c.o11yConf)}
-	mux := http.NewServeMux()
+	svr := tshttp.New(ctx, c.tshttp)
 	s := &Server{
-		o: o,
-		http: &http.Server{
-			Addr:    c.address,
-			Handler: mux,
-			// ErrorLog: ,
-		},
-		ts: &tsnet.Server{
-			Hostname:  "earbug",
-			Dir:       c.dir,
-			Ephemeral: true,
-			Logf: func(f string, args ...any) {
-				ctx := context.Background()
-				o.L.LogAttrs(ctx, slog.LevelDebug, "tailscale server",
-					slog.Group("tailscale", slog.String("server", fmt.Sprintf(f, args...))),
-				)
-			},
-		},
+		o:   svr.O,
+		svr: svr,
 	}
 
 	p, h := earbugv4connect.NewEarbugServiceHandler(s)
-	mux.Handle(p, otelhttp.NewHandler(h, "earbugv4connect"))
-	mux.Handle("/auth/callback", otelhttp.NewHandler(http.HandlerFunc(s.hAuthCallback), "authCallback"))
-	mux.HandleFunc("/-/ready", func(rw http.ResponseWriter, r *http.Request) { rw.Write([]byte("ok")) })
+	svr.Mux.Handle(p, otelhttp.NewHandler(h, "earbugv4connect"))
+	svr.Mux.Handle("/auth/callback", otelhttp.NewHandler(http.HandlerFunc(s.hAuthCallback), "authCallback"))
+	svr.Mux.HandleFunc("/-/ready", func(rw http.ResponseWriter, r *http.Request) { rw.Write([]byte("ok")) })
 
 	s.initData(ctx, c.bucket, c.key)
 
@@ -88,26 +63,26 @@ func (s *Server) initData(ctx context.Context, bucket, key string) error {
 	if bucket != "" && key != "" {
 		bkt, err := blob.OpenBucket(ctx, bucket)
 		if err != nil {
-			return s.o.markErr(ctx, "open bucket", err)
+			return s.o.Err(ctx, "open bucket", err)
 		}
 		defer bkt.Close()
 		or, err := bkt.NewReader(ctx, key, nil)
 		if err != nil {
-			return s.o.markErr(ctx, "open object", err)
+			return s.o.Err(ctx, "open object", err)
 		}
 		defer or.Close()
 		zr, err := zstd.NewReader(or)
 		if err != nil {
-			return s.o.markErr(ctx, "new zstd reader", err)
+			return s.o.Err(ctx, "new zstd reader", err)
 		}
 		defer or.Close()
 		b, err := io.ReadAll(zr)
 		if err != nil {
-			return s.o.markErr(ctx, "read object", err)
+			return s.o.Err(ctx, "read object", err)
 		}
 		err = proto.Unmarshal(b, &s.store)
 		if err != nil {
-			return s.o.markErr(ctx, "unmarshal store", err)
+			return s.o.Err(ctx, "unmarshal store", err)
 		}
 
 		rawToken := s.store.Token // old value
@@ -120,11 +95,13 @@ func (s *Server) initData(ctx context.Context, bucket, key string) error {
 		var token oauth2.Token
 		err = json.Unmarshal(rawToken, &token)
 		if err != nil {
-			return s.o.markErr(ctx, "unmarshal oauth token", err)
+			return s.o.Err(ctx, "unmarshal oauth token", err)
 		}
 
-		httpClient := (&oauth2.Config{Endpoint: oauthspotify.Endpoint}).Client(ctx, &token)
-		httpClient.Transport = otelhttp.NewTransport(httpClient.Transport)
+		httpClient := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
+		as := NewAuthState(s.store.Auth.ClientId, s.store.Auth.ClientSecret, "")
+		httpClient = as.conf.Client(ctx, &token)
 		s.spot = spotify.New(httpClient)
 
 		return nil
@@ -141,56 +118,5 @@ func (s *Server) initData(ctx context.Context, bucket, key string) error {
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	go func() {
-		<-ctx.Done()
-		s.o.L.LogAttrs(ctx, slog.LevelInfo, "shutting down")
-		s.http.Shutdown(context.Background())
-	}()
-
-	var lis net.Listener
-	var err error
-	if s.http.Addr == "funnel" {
-		s.o.L.LogAttrs(ctx, slog.LevelInfo, "starting funnel")
-		lis, err = s.ts.ListenFunnel("tcp", ":443")
-		if err != nil {
-			return s.o.markErr(ctx, "listen tailscale funnel", err)
-		}
-		for _, dom := range s.ts.CertDomains() {
-			if strings.HasSuffix(dom, ".ts.net") {
-				s.authURL = (&url.URL{Scheme: "https", Host: dom, Path: "/auth/callback"}).String()
-				s.o.L.LogAttrs(ctx, slog.LevelDebug, "setting auth callback url",
-					slog.String("url", s.authURL),
-				)
-				break
-			}
-		}
-	} else {
-		lis, err = net.Listen("tcp", s.http.Addr)
-		if err != nil {
-			return s.o.markErr(ctx, "listen locally", err)
-		}
-	}
-	err = s.http.Serve(lis)
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return s.o.markErr(ctx, "unexpected server shutdown", err)
-	}
-	return nil
-}
-
-type O struct {
-	*observability.O
-}
-
-func (o *O) markErr(ctx context.Context, msg string, err error) error {
-	o.L.LogAttrs(ctx, slog.LevelError, msg, slog.String("error", err.Error()))
-	return fmt.Errorf("%s: %w", msg, err)
-}
-
-func (o *O) httpError(ctx context.Context, msg string, err error, rw http.ResponseWriter, code int) {
-	err = o.markErr(ctx, msg, err)
-	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, msg)
-	}
-	http.Error(rw, err.Error(), code)
+	return s.svr.Run(ctx)
 }

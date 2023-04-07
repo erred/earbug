@@ -16,7 +16,7 @@ func (s *Server) UpdateRecentlyPlayed(ctx context.Context, r *connect.Request[ea
 
 	items, err := s.spot.PlayerRecentlyPlayedOpt(ctx, &spotify.RecentlyPlayedOptions{Limit: 50})
 	if err != nil {
-		return nil, s.o.markErr(ctx, "get recently played", err)
+		return nil, s.o.Err(ctx, "get recently played", err)
 	}
 
 	for _, item := range items {

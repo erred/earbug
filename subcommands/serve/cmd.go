@@ -5,16 +5,14 @@ import (
 	"flag"
 
 	"github.com/google/subcommands"
-	"go.seankhliao.com/earbug/v4/observability"
+	"go.seankhliao.com/svcrunner/v2/tshttp"
 )
 
 type Cmd struct {
-	o11yConf observability.Config
+	tshttp tshttp.Config
 
-	dir     string
-	address string
-	bucket  string
-	key     string
+	bucket string
+	key    string
 }
 
 func (c *Cmd) Name() string     { return `serve` }
@@ -29,11 +27,9 @@ Flags:
 }
 
 func (c *Cmd) SetFlags(f *flag.FlagSet) {
-	c.o11yConf.SetFlags(f)
-	f.StringVar(&c.address, "listen.address", ":8080", `address to serve on, "funnel" will use a tailscale funnel`)
+	c.tshttp.SetFlags(f)
 	f.StringVar(&c.bucket, "data.init.bucket", "", "bucket to load initial data from")
 	f.StringVar(&c.key, "data.init.key", "", "key to load initial data from")
-	f.StringVar(&c.dir, "state.dir", "/data", "directory for local data")
 }
 
 func (c *Cmd) Execute(ctx context.Context, f *flag.FlagSet, args ...any) subcommands.ExitStatus {
