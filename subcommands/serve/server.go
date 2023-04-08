@@ -85,17 +85,15 @@ func (s *Server) initData(ctx context.Context, bucket, key string) error {
 			return s.o.Err(ctx, "unmarshal store", err)
 		}
 
-		rawToken := s.store.Token // old value
-		if s.store.Auth != nil && len(s.store.Auth.Token) > 0 {
-			rawToken = s.store.Auth.Token // new value
-		} else {
-			s.o.L.LogAttrs(ctx, slog.LevelWarn, "falling back to deprecated token field")
-		}
-
 		var token oauth2.Token
-		err = json.Unmarshal(rawToken, &token)
-		if err != nil {
-			return s.o.Err(ctx, "unmarshal oauth token", err)
+		if s.store.Auth != nil && len(s.store.Auth.Token) > 0 {
+			rawToken := s.store.Auth.Token // new value
+			err = json.Unmarshal(rawToken, &token)
+			if err != nil {
+				return s.o.Err(ctx, "unmarshal oauth token", err)
+			}
+		} else {
+			s.o.L.LogAttrs(ctx, slog.LevelWarn, "no auth token found")
 		}
 
 		httpClient := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
