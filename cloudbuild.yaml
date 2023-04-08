@@ -1,10 +1,9 @@
 steps:
-  - name: "us-central1-docker.pkg.dev/com-seankhliao/build/gotip:latest"
+  - name: 'ghcr.io/seankhliao/go:tip'
     entrypoint: sh
-    env:
-      - CGO_ENABLED=0
     args:
       - -c
       - |
         go test -vet=all ./... && \
-        go build ./...
+        go build ./... && \
+        staticcheck ./...
