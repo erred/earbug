@@ -1,0 +1,9 @@
+.PHONY: oci
+oci:
+	KO_DOCKER_REPO=ghcr.io/seankhliao/earbug ko build --bare
+
+.PHONY: validate
+validate:
+	go build ./...
+	go test -vet=all ./...
+	staticcheck ./...
