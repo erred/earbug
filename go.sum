@@ -1990,8 +1990,8 @@ go.opentelemetry.io/proto/otlp v0.19.0 h1:IVN6GR+mhC4s5yfcTbmzHYODqvWAp3ZedA2SJP
 go.opentelemetry.io/proto/otlp v0.19.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381 h1:Wsy8jkJW42E9P2FiCHVqzEw1hrn6V1J+mnbiqxqpipk=
 go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381/go.mod h1:hIP4cZ4M25jP1pezFIN/EQINQljVHLI/LQrcc24lw0M=
-go.seankhliao.com/svcrunner/v2 v2.0.0-20230408110612-f62017ce32be h1:Rvd4d9VcMH6BowtvIVxkuYnYo7cIE0wFHeUrVrxTmV4=
-go.seankhliao.com/svcrunner/v2 v2.0.0-20230408110612-f62017ce32be/go.mod h1:BgF78qNBLKTGsvuLIC0Ah5OxtD9SWuVT1xn3atDAQVk=
+go.seankhliao.com/svcrunner/v2 v2.0.0-20230410162457-a48dd6ac2825 h1:xEqvOxihIrYzayrfxLaKnjXtyuzmTBXt6DJgfNKQC60=
+go.seankhliao.com/svcrunner/v2 v2.0.0-20230410162457-a48dd6ac2825/go.mod h1:WdIM2lRHX/LkIAN0AHydv5eM4n5r0FpuEShUc+jAsqw=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=

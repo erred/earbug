@@ -3,6 +3,7 @@ package update
 import (
 	"context"
 	"flag"
+	"log/slog"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -11,7 +12,6 @@ import (
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
 	"go.seankhliao.com/proto/earbug/v4/earbugv4connect"
 	"go.seankhliao.com/svcrunner/v2/observability"
-	"golang.org/x/exp/slog"
 )
 
 type Cmd struct {

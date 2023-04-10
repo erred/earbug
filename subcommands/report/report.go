@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -11,7 +12,6 @@ import (
 	"go.seankhliao.com/earbug/v4/client"
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
 	"go.seankhliao.com/svcrunner/v2/observability"
-	"golang.org/x/exp/slog"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

@@ -3,6 +3,7 @@ package export
 import (
 	"context"
 	"flag"
+	"log/slog"
 	"os"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	earbugv4 "go.seankhliao.com/proto/earbug/v4"
 	"go.seankhliao.com/proto/earbug/v4/earbugv4connect"
 	"go.seankhliao.com/svcrunner/v2/observability"
-	"golang.org/x/exp/slog"
 )
 
 type Cmd struct {

@@ -9,9 +9,8 @@ require (
 	github.com/zmb3/spotify/v2 v2.3.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.0-rc.2
 	go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381
-	go.seankhliao.com/svcrunner/v2 v2.0.0-20230408110612-f62017ce32be
+	go.seankhliao.com/svcrunner/v2 v2.0.0-20230410162457-a48dd6ac2825
 	gocloud.dev v0.29.0
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/oauth2 v0.6.0
 	google.golang.org/protobuf v1.30.0
 )
@@ -95,6 +94,7 @@ require (
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
