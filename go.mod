@@ -7,9 +7,9 @@ require (
 	github.com/google/subcommands v1.2.0
 	github.com/klauspost/compress v1.16.4
 	github.com/zmb3/spotify/v2 v2.3.1
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.0-rc.2
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.0
 	go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381
-	go.seankhliao.com/svcrunner/v2 v2.0.0-20230410162457-a48dd6ac2825
+	go.seankhliao.com/svcrunner/v2 v2.0.0-20230429103315-e882679e30a6
 	gocloud.dev v0.29.0
 	golang.org/x/oauth2 v0.6.0
 	google.golang.org/protobuf v1.30.0
@@ -38,11 +38,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.8 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -80,16 +80,16 @@ require (
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.38.0-rc.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.38.0-rc.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/metric v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/sdk v1.15.0-rc.2 // indirect
-	go.opentelemetry.io/otel/sdk/metric v0.38.0-rc.2 // indirect
-	go.opentelemetry.io/otel/trace v1.15.0-rc.2 // indirect
+	go.opentelemetry.io/otel v1.15.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.15.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.38.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.38.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.15.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.15.0 // indirect
+	go.opentelemetry.io/otel/metric v0.38.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.15.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v0.38.0 // indirect
+	go.opentelemetry.io/otel/trace v1.15.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
@@ -109,7 +109,7 @@ require (
 	google.golang.org/api v0.114.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230320173215-1fe4d14fc725 // indirect
-	google.golang.org/grpc v1.53.0 // indirect
+	google.golang.org/grpc v1.54.0 // indirect
 	gvisor.dev/gvisor v0.0.0-20230328175328-162ed5ef888d // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
