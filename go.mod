@@ -10,6 +10,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.0
 	go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381
 	go.seankhliao.com/svcrunner/v2 v2.0.0-20230429103315-e882679e30a6
+	go.seankhliao.com/webstyle v0.5.6
 	gocloud.dev v0.29.0
 	golang.org/x/oauth2 v0.6.0
 	google.golang.org/protobuf v1.30.0
@@ -79,6 +80,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/yuin/goldmark v1.5.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel v1.15.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.15.0 // indirect

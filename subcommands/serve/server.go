@@ -16,6 +16,7 @@ import (
 	"go.seankhliao.com/proto/earbug/v4/earbugv4connect"
 	"go.seankhliao.com/svcrunner/v2/observability"
 	"go.seankhliao.com/svcrunner/v2/tshttp"
+	"go.seankhliao.com/webstyle"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/gcsblob"
@@ -35,6 +36,8 @@ type Server struct {
 	authURL   string
 	authState atomic.Pointer[AuthState]
 
+	render webstyle.Renderer
+
 	earbugv4connect.UnimplementedEarbugServiceHandler
 }
 
@@ -43,12 +46,18 @@ func New(ctx context.Context, c *Cmd) *Server {
 	s := &Server{
 		o:   svr.O,
 		svr: svr,
+
+		render: webstyle.NewRenderer(webstyle.TemplateCompact),
 	}
 
 	p, h := earbugv4connect.NewEarbugServiceHandler(s)
 	svr.Mux.Handle(p, otelhttp.NewHandler(h, "earbugv4connect"))
 	svr.Mux.Handle("/auth/callback", otelhttp.NewHandler(http.HandlerFunc(s.hAuthCallback), "authCallback"))
 	svr.Mux.HandleFunc("/-/ready", func(rw http.ResponseWriter, r *http.Request) { rw.Write([]byte("ok")) })
+	svr.Mux.HandleFunc("/", s.handleIndex)
+	svr.Mux.HandleFunc("/artists", s.handleArtists)
+	svr.Mux.HandleFunc("/playbacks", s.handlePlaybacks)
+	svr.Mux.HandleFunc("/tracks", s.handleTracks)
 
 	s.initData(ctx, c.bucket, c.key)
 

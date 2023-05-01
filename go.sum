@@ -1882,6 +1882,8 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+github.com/yuin/goldmark v1.5.4 h1:2uY/xC0roWy8IBEGLgB1ywIoEJFGmRrX21YQcvGZzjU=
+github.com/yuin/goldmark v1.5.4/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43/go.mod h1:aX5oPXxHm3bOH+xeAttToC8pqch2ScQN/JoXYupl6xs=
 github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50/go.mod h1:NUSPSUX/bi6SeDMUh6brw0nXpxHnc96TguQh0+r/ssA=
 github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f/go.mod h1:GlGEuHIJweS1mbCqG+7vt2nvWLzLLnRHbXz5JKd/Qbg=
@@ -1994,6 +1996,8 @@ go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381 h1:Wsy8jkJW42E9P2FiCH
 go.seankhliao.com/proto v0.0.0-20230401154442-4f34caeee381/go.mod h1:hIP4cZ4M25jP1pezFIN/EQINQljVHLI/LQrcc24lw0M=
 go.seankhliao.com/svcrunner/v2 v2.0.0-20230429103315-e882679e30a6 h1:AYKKQ+6tjG1EkxCxuNjJumxpmHnck2xIkZeoeGNJNyk=
 go.seankhliao.com/svcrunner/v2 v2.0.0-20230429103315-e882679e30a6/go.mod h1:XeYGyduiCJPd0boqNtItwzTLhqeySdRxseSVn5LZi6M=
+go.seankhliao.com/webstyle v0.5.6 h1:waSVySaBgXmCmkTcxCBQZDPSczcxormjUhktIct5Sr4=
+go.seankhliao.com/webstyle v0.5.6/go.mod h1:YQOcjYNGVTpK/0cOK9GcsFchZ9mnm9vYxv+ZjQekTtk=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
