@@ -137,7 +137,7 @@ func (s *Server) handleArtists(rw http.ResponseWriter, r *http.Request) {
 			}
 			return len(artistData[i].Tracks) > len(artistData[j].Tracks)
 		case "time":
-			return artistData[i].Time < artistData[j].Time
+			return artistData[i].Time > artistData[j].Time
 		case "plays":
 			fallthrough
 		default:
