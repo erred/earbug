@@ -1,6 +1,6 @@
 module go.seankhliao.com/earbug/v4
 
-go 1.20
+go 1.21
 
 require (
 	github.com/bufbuild/connect-go v1.5.2
