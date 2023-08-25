@@ -14,6 +14,10 @@ build:
         ldflags:
           - -s
           - -w
+        dependencies:
+          paths:
+            - "go.mod"
+            - "**/*.go"
   tagPolicy:
     inputDigest: {}
   platforms:
