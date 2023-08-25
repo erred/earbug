@@ -5,13 +5,6 @@ buildMetadata:
   - managedByLabel
   - originAnnotations
 
-secretGenerator:
-  - name: gcp
-    options:
-      disableNameSuffixHash: false
-    files:
-      - key.json
-
 patches:
   - patch: |
       apiVersion: v1
@@ -43,6 +36,19 @@ patches:
               - name: gcp
                 secret:
                   secretName: gcp
+
+generators:
+  - |
+    apiVersion: viaduct.ai/v1
+    kind: ksops
+    metadata:
+      name: ghdefaults
+      annotations:
+        config.kubernetes.io/function: |
+          exec:
+            path: /opt/kustomize/ksops
+    files:
+      - secrets.enc.k8s.yaml
 
 resources:
   - ../base
