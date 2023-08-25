@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+buildMetadata:
+  - managedByLabel
+  - originAnnotations
+
+secretGenerator:
+  - name: gcp
+    options:
+      disableNameSuffixHash: true
+    files:
+      - key.json
+
+resources:
+  - ../base
+  - namespace.k8s.yaml

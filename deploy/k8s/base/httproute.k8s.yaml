@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: earbug
+spec:
+  parentRefs:
+    - name: default
+      namespace: envoy-gateway-system
+  hostnames:
+    - earbug.ihwa.liao.dev
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+        - path:
+            type: Exact
+            value: /artists
+        - path:
+            type: Exact
+            value: /playbacks
+        - path:
+            type: Exact
+            value: /tracks
+      backendRefs:
+        - name: earbug
+          port: 80

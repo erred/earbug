@@ -1,0 +1,44 @@
+apiVersion: skaffold/v4beta5
+kind: Config
+metadata:
+  name: earbug
+build:
+  artifacts:
+    - image: ghcr.io/seankhliao/earbug
+      ko:
+        fromImage: cgr.dev/chainguard/static:latest@sha256:6b35c7e7084349b3a71e70219f61ea49b22d663b89b0ea07474e5b44cbc70860
+        env:
+          - CGO_ENABLED=0
+        flags:
+          - -trimpath
+        ldflags:
+          - -s
+          - -w
+  tagPolicy:
+    inputDigest: {}
+  platforms:
+    - linux/amd64
+    - linux/arm64
+deploy:
+  kubeContext: ihwa
+  kubectl:
+    defaultNamespace: earbug
+manifests:
+  kustomize:
+    buildArgs:
+      - --enable-alpha-plugins
+      - --enable-exec
+    paths:
+      - deploy/k8s/ihwa
+profiles:
+  - name: ihwa
+  - name: local
+    deploy:
+      kubeContext: kind-kind
+    manifests:
+      kustomize:
+        paths:
+          - deploy/k8s/kind
+    patches:
+      - path: /build/artifacts/0/image
+        value: ko.local/seankhliao/earbug

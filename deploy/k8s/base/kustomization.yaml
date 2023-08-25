@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: earbug
+    includeSelectors: true
+    includeTemplates: true
+  - pairs:
+      app.kubernetes.io/version: v0.0.1
+    includeTemplates: true
+namespace: earbug
+
+resources:
+  - httproute.k8s.yaml
+  - statefulset.k8s.yaml
+  - service.k8s.yaml

@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: earbug
+spec:
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: earbug
+  serviceName: earbug
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: earbug
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: earbug
+          image: ghcr.io/seankhliao/earbug
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/google/key.json
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+            - mountPath: /var/run/secrets/google
+              name: gcp
+      volumes:
+        - name: gcp
+          secret:
+            secretName: gcp
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: local-path
