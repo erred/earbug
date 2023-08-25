@@ -17,9 +17,6 @@ spec:
       containers:
         - name: earbug
           image: ghcr.io/seankhliao/earbug
-          env:
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /var/run/secrets/google/key.json
           ports:
             - name: http
               containerPort: 8080
@@ -30,12 +27,6 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: data
-            - mountPath: /var/run/secrets/google
-              name: gcp
-      volumes:
-        - name: gcp
-          secret:
-            secretName: gcp
   volumeClaimTemplates:
     - apiVersion: v1
       kind: PersistentVolumeClaim

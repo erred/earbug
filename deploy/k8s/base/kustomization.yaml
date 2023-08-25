@@ -12,6 +12,5 @@ labels:
 namespace: earbug
 
 resources:
-  - httproute.k8s.yaml
   - statefulset.k8s.yaml
   - service.k8s.yaml

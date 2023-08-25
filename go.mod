@@ -1,16 +1,15 @@
 module go.seankhliao.com/earbug/v5
 
-go 1.21
+go 1.21.0
 
 require (
 	github.com/klauspost/compress v1.16.6
 	github.com/zmb3/spotify/v2 v2.3.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.42.0
 	go.seankhliao.com/proto v0.0.0-20230625120553-7afc6e819965
-	go.seankhliao.com/svcrunner/v2 v2.0.0-20230625120619-6433a3109ff3
+	go.seankhliao.com/svcrunner/v3 v3.0.0-20230825204710-8045e6d16154
 	go.seankhliao.com/webstyle v0.0.0-20230625120550-9571efcb99d4
 	gocloud.dev v0.30.0
-	golang.org/x/net v0.11.0
 	golang.org/x/oauth2 v0.9.0
 	google.golang.org/protobuf v1.30.0
 )
@@ -48,8 +47,9 @@ require (
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.20.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/net v0.11.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.128.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

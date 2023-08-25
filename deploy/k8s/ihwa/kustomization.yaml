@@ -8,10 +8,43 @@ buildMetadata:
 secretGenerator:
   - name: gcp
     options:
-      disableNameSuffixHash: true
+      disableNameSuffixHash: false
     files:
       - key.json
 
+patches:
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: earbug
+        annotations:
+          tailscale.com/hostname: earbug-ihwa
+      spec:
+        type: LoadBalancer
+        loadBalancerClass: tailscale
+  - patch: |
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: earbug
+      spec:
+        template:
+          spec:
+            containers:
+              - name: earbug
+                env:
+                  - name: GOOGLE_APPLICATION_CREDENTIALS
+                    value: /var/run/secrets/google/key.json
+                volumeMounts:
+                  - mountPath: /var/run/secrets/google
+                    name: gcp
+            volumes:
+              - name: gcp
+                secret:
+                  secretName: gcp
+
 resources:
   - ../base
+  - httproute.k8s.yaml
   - namespace.k8s.yaml
