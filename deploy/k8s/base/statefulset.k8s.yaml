@@ -24,6 +24,18 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
           volumeMounts:
             - mountPath: /data
               name: data
