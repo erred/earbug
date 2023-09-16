@@ -2198,8 +2198,8 @@ go.opentelemetry.io/proto/otlp v0.20.0 h1:BLOA1cZBAGSbRiNuGCCKiFrCdYB7deeHDeD1Su
 go.opentelemetry.io/proto/otlp v0.20.0/go.mod h1:3QgjzPALBIv9pcknj2EXGPXjYPFdUh/RQfF8Lz3+Vnw=
 go.seankhliao.com/proto v0.0.0-20230625120553-7afc6e819965 h1:4NS3kPddDI4jjW9s344vxQi4eSwAx8fDep4J0CZKv7M=
 go.seankhliao.com/proto v0.0.0-20230625120553-7afc6e819965/go.mod h1:hIP4cZ4M25jP1pezFIN/EQINQljVHLI/LQrcc24lw0M=
-go.seankhliao.com/svcrunner/v3 v3.0.0-20230826121122-52a97a8823fa h1:PFZLiTv+6Q8XeOqzOHXVyuORXnuPptFPtMKovSksIlg=
-go.seankhliao.com/svcrunner/v3 v3.0.0-20230826121122-52a97a8823fa/go.mod h1:yonO7fT+73M5RUFXg1iZCdGw5NqpoxIsb9FxL7lkTv4=
+go.seankhliao.com/svcrunner/v3 v3.0.0-20230916150750-e7fb57f6eef9 h1:FTVZtI3rhiAuQHbU2sKXCh0qCM2nip36NEP9MO+YA9I=
+go.seankhliao.com/svcrunner/v3 v3.0.0-20230916150750-e7fb57f6eef9/go.mod h1:yonO7fT+73M5RUFXg1iZCdGw5NqpoxIsb9FxL7lkTv4=
 go.seankhliao.com/webstyle v0.0.0-20230625120550-9571efcb99d4 h1:ah2q+MMP6FqYcdXjdUUbiIIpZTzYGFV8KXuYkY1T350=
 go.seankhliao.com/webstyle v0.0.0-20230625120550-9571efcb99d4/go.mod h1:k0yE3BtQZE8u8GtPBUYvSW9DEij4w36qdvVaIzJCGNA=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=

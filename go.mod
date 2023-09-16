@@ -7,7 +7,7 @@ require (
 	github.com/zmb3/spotify/v2 v2.3.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.42.0
 	go.seankhliao.com/proto v0.0.0-20230625120553-7afc6e819965
-	go.seankhliao.com/svcrunner/v3 v3.0.0-20230826121122-52a97a8823fa
+	go.seankhliao.com/svcrunner/v3 v3.0.0-20230916150750-e7fb57f6eef9
 	go.seankhliao.com/webstyle v0.0.0-20230625120550-9571efcb99d4
 	gocloud.dev v0.30.0
 	golang.org/x/oauth2 v0.10.0
